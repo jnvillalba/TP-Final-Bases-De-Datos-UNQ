@@ -1,0 +1,298 @@
+--Todo esto lo hice en pgAdmin
+--1
+SELECT nombre_real, nombre_completo
+FROM ( ( cancion 
+JOIN en_lista ON ((cancion.nombre = en_lista.nombre_cancion) 
+	      AND (cancion.artista = en_lista.artista))  )
+JOIN artista ON (cancion.artista=artista.id) )
+JOIN usuario ON (en_lista.nombre_usuario = usuario.username)
+WHERE anio_agregacion = '2012';
+
+
+--2
+SELECT nombre_real, 2019 - anio_nacimiento AS edad
+FROM artista 
+JOIN cancion ON cancion.artista = artista.id
+WHERE sigue_activo = true 
+AND artista.nombre = cancion.nombre AND descargas_actuales > '10000';
+
+
+--3
+SELECT username, anio_inicio, COUNT(id) AS cantidad
+FROM (usuario 
+JOIN sigue ON usuario.username = sigue.nombre_usuario )
+JOIN artista ON sigue.artista = artista.id
+WHERE anio_agregacion < anio_inicio
+GROUP BY username
+ORDER BY COUNT(id) DESC;
+
+
+--4 
+SELECT artista.nombre, SUM(descargas_actuales) AS suma_descargas
+FROM  cancion 
+JOIN artista ON cancion.artista = artista.id
+WHERE pais_origen = 'Argentina'
+GROUP BY artista.nombre
+HAVING SUM(descargas_actuales) > (SELECT AVG(descargas_actuales) FROM cancion)
+ORDER BY suma_descargas DESC;
+
+
+--5 
+SELECT COUNT(nombre_cancion)
+FROM ((artista 
+JOIN cancion ON artista.id = cancion.artista)
+JOIN en_lista ON cancion.nombre = en_lista.nombre_cancion)
+JOIN usuario ON en_lista.nombre_usuario = usuario.username
+GROUP BY pais_usuario,pais_origen
+ORDER BY COUNT(nombre_cancion) DESC
+OFFSET 5 ROWS -- descarto las primeras 5 tuplas
+FETCH FIRST 10 ROW ONLY; -- me quedo solo con las 10 siguientes 
+
+
+--6 
+SELECT nombre_completo
+FROM usuario 
+EXCEPT
+SELECT nombre_completo
+FROM  (usuario 
+JOIN en_lista ON usuario.username = en_lista.nombre_usuario)
+JOIN cancion ON (cancion.nombre = en_lista.nombre_cancion) 
+	  	   AND (cancion.artista = en_lista.artista)
+	  				
+WHERE anio_creacion < 2000 /* saco menores del 2000 */
+ORDER BY nombre_completo;
+
+
+--7 
+SELECT pais_origen, count(id) AS cantidad_artistas
+FROM artista JOIN cancion ON (cancion.artista = artista.id)	
+GROUP BY pais_origen
+EXCEPT
+SELECT pais_origen, count(id) AS cantidad_artistas
+FROM artista
+JOIN cancion ON (cancion.artista = artista.id)	  				
+WHERE anio_creacion > 2015 
+GROUP BY pais_origen
+ORDER BY cantidad_artistas DESC;
+
+
+--8
+SELECT username, anio_inicio, pais_usuario
+FROM  artista 
+JOIN cancion ON artista.id = cancion.artista
+JOIN en_lista ON ( (artista.id = en_lista.artista) AND (cancion.nombre = en_lista.nombre_cancion) )
+JOIN usuario ON (en_lista.nombre_usuario = usuario.username)
+EXCEPT
+SELECT username, anio_inicio, pais_usuario
+FROM artista
+JOIN cancion ON artista.id = cancion.artista
+JOIN en_lista ON ( (artista.id = en_lista.artista) AND (cancion.nombre = en_lista.nombre_cancion) )
+JOIN usuario ON (en_lista.nombre_usuario = usuario.username)			
+WHERE artista.pais_origen = 'Argentina'
+GROUP BY username;
+
+
+--9
+SELECT AVG(descargas_actuales) AS promedio
+FROM  artista 
+JOIN cancion ON artista.id = cancion.artista	
+GROUP BY pais_origen
+ORDER BY promedio DESC;
+
+
+--10
+SELECT nombre_real, nombre_completo
+FROM  (artista 
+JOIN sigue ON artista.id = sigue.artista	)
+JOIN usuario ON sigue.nombre_usuario = usuario.username
+WHERE anio_agregacion <= '2008'
+
+
+--11
+SELECT nombre_real, 2019 - anio_nacimiento AS edad
+FROM  (artista 
+JOIN cancion ON artista.id = cancion.artista)
+WHERE (sigue_activo = 'false') 
+AND (descargas_actuales < 10000000);
+
+
+--12
+SELECT artista.nombre, AVG(descargas_actuales) AS promedio
+FROM artista JOIN cancion ON artista.id = cancion.artista 
+WHERE artista.pais_origen = 'Estados Unidos' 
+OR artista.pais_origen = 'Canada'
+GROUP BY artista.nombre 
+HAVING AVG(descargas_actuales) < (SELECT AVG(descargas_actuales) FROM cancion)
+ORDER BY promedio DESC;
+
+
+--13 
+SELECT DISTINCT nombre_completo
+FROM (usuario 
+JOIN en_lista ON usuario.username = en_lista.nombre_usuario)
+JOIN artista ON en_lista.artista = artista.id
+JOIN cancion ON artista.id = cancion.artista
+WHERE artista.nombre = 'Calle 13'
+EXCEPT 
+SELECT DISTINCT nombre_completo
+FROM (usuario 
+JOIN en_lista ON usuario.username = en_lista.nombre_usuario)
+JOIN artista ON en_lista.artista = artista.id
+JOIN cancion ON artista.id = cancion.artista
+WHERE artista.nombre = 'Alejandro Saenz'
+
+
+--14
+SELECT DISTINCT nombre_real
+FROM  (artista 
+JOIN cancion ON artista.id = cancion.artista)
+JOIN sigue ON (artista.id = sigue.artista)
+JOIN usuario ON (sigue.nombre_usuario = usuario.username)	
+EXCEPT
+SELECT DISTINCT nombre_real
+FROM  (artista 
+JOIN cancion ON artista.id = cancion.artista)
+JOIN sigue ON (artista.id = sigue.artista)
+JOIN usuario ON (sigue.nombre_usuario = usuario.username)			
+WHERE artista.pais_origen <> 'Argentina'
+ORDER BY nombre_real;
+
+
+--15
+SELECT artista.nombre, count(cancion.nombre) AS cantidad
+FROM artista 
+JOIN cancion ON artista.id = cancion.artista
+GROUP BY artista.nombre
+EXCEPT 
+SELECT artista.nombre, count(cancion.nombre)
+FROM ((artista 
+JOIN cancion ON artista.id = cancion.artista)
+JOIN en_lista ON ( (cancion.artista = en_lista.artista) AND (cancion.nombre = en_lista.nombre_cancion) ))
+JOIN usuario ON (en_lista.nombre_usuario = usuario.username)	
+WHERE en_lista.nombre_cancion = cancion.nombre
+GROUP BY artista.nombre
+ORDER BY cantidad DESC;
+
+--16 
+SELECT username, anio_inicio, pais_usuario
+FROM (artista 
+JOIN sigue ON  (sigue.artista = artista.id))
+JOIN usuario ON (sigue.nombre_usuario = usuario.username)
+EXCEPT
+SELECT username, anio_inicio, pais_usuario
+FROM (artista 
+JOIN sigue ON  (sigue.artista = artista.id))
+JOIN usuario ON (sigue.nombre_usuario = usuario.username)
+WHERE sigue_activo <> true;
+
+
+--17
+SELECT AVG(descargas_actuales) AS promedio_descargas
+FROM artista JOIN cancion ON artista.id = cancion.artista
+GROUP BY anio_nacimiento
+ORDER BY promedio_descargas DESC;
+
+
+--18
+SELECT nombre_real, nombre_completo
+FROM (artista 
+JOIN sigue ON  (sigue.artista = artista.id))
+JOIN usuario ON (sigue.nombre_usuario = usuario.username)
+WHERE pais_origen = 'Uruguay' 
+OR pais_origen = 'Brasil';
+
+
+--19
+SELECT nombre_real, 2019 - anio_nacimiento AS edad
+FROM (artista JOIN cancion ON artista.id = cancion.artista)
+WHERE (sigue_activo = true) 
+AND (duracion BETWEEN 100 AND 300)
+GROUP BY nombre_real, edad
+OFFSET 5 ROWS -- descarto las primeras 5 tuplas
+FETCH FIRST 10 ROW ONLY; -- me quedo solo con las 10 siguientes
+
+--20
+SELECT artista.nombre, AVG(duracion)
+FROM artista JOIN cancion ON artista.id = cancion.artista
+WHERE pais_origen = 'Alemania' 
+GROUP BY artista.nombre
+HAVING AVG(duracion) > (SELECT AVG(duracion) FROM cancion)
+ORDER BY AVG(duracion) DESC;
+
+
+--21
+SELECT COUNT(id)
+FROM (artista 
+JOIN sigue ON artista.id = sigue.artista)
+JOIN usuario ON sigue.nombre_usuario = usuario.username
+WHERE sigue_activo = true
+AND (pais_usuario = 'Argentina' 
+OR pais_usuario = 'Brasil'
+OR pais_usuario = 'Uruguay' 
+OR pais_usuario = 'Paraguay')
+GROUP BY pais_usuario
+ORDER BY COUNT(id) DESC;
+
+
+--22
+SELECT DISTINCT nombre_real
+FROM ((artista 
+JOIN sigue ON artista.id = sigue.artista)
+JOIN usuario ON sigue.nombre_usuario = usuario.username)
+JOIN en_lista ON en_lista.nombre_usuario = usuario.username
+WHERE pais_usuario = 'Japon' 
+OR (pais_usuario = 'Argentina' 
+AND pais_origen <> 'Argentina')
+ORDER BY nombre_real;
+
+
+--23
+SELECT nombre_completo
+FROM (artista 
+JOIN sigue ON artista.id = sigue.artista)
+JOIN usuario ON sigue.nombre_usuario = usuario.username
+EXCEPT
+SELECT nombre_completo
+FROM ((artista 
+JOIN sigue ON artista.id = sigue.artista)
+JOIN usuario ON sigue.nombre_usuario = usuario.username)
+WHERE sigue_activo = false
+ORDER BY nombre_completo;
+
+
+--24
+SELECT pais_origen, COUNT(id) AS cantidad
+FROM ((artista 
+JOIN sigue ON artista.id = sigue.artista)
+JOIN usuario ON sigue.nombre_usuario = usuario.username)
+GROUP BY pais_origen
+EXCEPT
+SELECT pais_origen, COUNT(id) AS cantidad
+FROM ((artista 
+JOIN sigue ON artista.id = sigue.artista)
+JOIN usuario ON sigue.nombre_usuario = usuario.username)
+WHERE sigue.nombre_usuario IS NULL /*no hayan sido seguidos por ningún usuario*/
+GROUP BY pais_origen
+ORDER BY cantidad DESC;
+
+
+--25 
+SELECT username, anio_inicio, pais_usuario
+FROM ((artista 
+JOIN en_lista ON artista.id = en_lista.artista)
+JOIN usuario ON en_lista.nombre_usuario = usuario.username)
+JOIN cancion ON en_lista.artista = cancion.artista
+EXCEPT
+SELECT username, anio_inicio, pais_usuario
+FROM (artista
+JOIN en_lista ON artista.id = en_lista.artista)
+JOIN usuario ON en_lista.nombre_usuario = usuario.username
+JOIN cancion ON en_lista.artista = cancion.artista
+WHERE anio_creacion < 2000
+
+
+--26 
+SELECT AVG(duracion) AS promedio
+FROM artista JOIN cancion ON artista.id = cancion.artista
+GROUP BY anio_nacimiento
+ORDER BY promedio DESC;
