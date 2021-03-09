@@ -1,0 +1,61 @@
+-- 1 Creo la base de datos
+
+CREATE DATABASE tp_villalba;
+
+-- 2 Entro a la base de datos
+
+\c tp_villalba 
+
+-- 3 Creo las tablas segun el enunciado
+
+CREATE TABLE artista (id SERIAL PRIMARY KEY,
+						nombre varchar(50) NOT NULL UNIQUE,
+						nombre_real varchar(50) NOT NULL,
+						sigue_activo boolean DEFAULT TRUE,
+						pais_origen varchar(50) NOT NULL,
+						anio_nacimiento integer NOT NULL
+            );
+
+
+CREATE TABLE usuario (nombre_completo varchar(50),
+						username varchar(50) PRIMARY KEY,
+						password varchar(50),
+						anio_inicio integer,
+						pais_usuario varchar(50)
+            );
+
+CREATE TABLE cancion (nombre varchar(50),
+						artista integer,
+						duracion integer,
+						descargas_actuales integer,
+						anio_creacion integer,
+						CONSTRAINT cancion_pk PRIMARY KEY(nombre, artista),
+						FOREIGN KEY (artista) REFERENCES artista(id)
+					  );
+
+
+CREATE TABLE en_lista (nombre_usuario varchar(50),
+						nombre_cancion varchar(50),
+						artista integer,
+						anio_agregacion integer,
+						CONSTRAINT en_lista_pk PRIMARY KEY(nombre_usuario, nombre_cancion, artista),
+						FOREIGN KEY (nombre_usuario) REFERENCES usuario(username),
+						FOREIGN KEY (nombre_cancion, artista) REFERENCES cancion(nombre, artista)
+            );
+
+
+CREATE TABLE sigue(artista integer,
+					nombre_usuario varchar(50),
+					anio_agregacion integer,
+					CONSTRAINT sigue_pk PRIMARY KEY(artista, nombre_usuario),
+					FOREIGN KEY (artista) REFERENCES artista(id),
+					FOREIGN KEY (nombre_usuario)REFERENCES usuario(username)
+					);
+
+-- Hasta aca trabaje con SQL Shell(windows), para insertar los datos me cambie a pgAdmin4
+
+
+-- 4 Agrego el usuario Ines Cosa
+
+INSERT INTO usuario (nombre_completo, username, password, anio_inicio, pais_usuario)
+VALUES ('Ines Cosa', 'niñita', 'muerte', 2019, 'Italia');
